@@ -4,17 +4,26 @@
 #include <assert.h>
 #include <string.h>
 
-void insereFila(noAviao **pont, int id, int qtdCombustivel, int *nAvioes, int nPrateleira, FILE **file){
+void insereFila(noAviao **pont, int id, int qtdCombustivel, int *nAvioes, int nPrateleira, FILE **file, int *prioridade){
 	assert(pont);
+	assert(file);
 
-	// O número de aviões recebe um número de 0 a 3
-	// Chegam no máximo 3 aviões na fila por vez
-	*nAvioes = rand()%4;
+	/* O número de aviões para pousar recebe um número de 0 a 3
+	 * Chegam no máximo 3 aviões na fila de pouso por vez
+	 * O número de aviões para decolar recebe um número de 0 a 1
+	 * Chega no máximo 1 avião na fila de pouso por vez
+	 */
 
-	// A quantidade de combustivel recebe um número de 0 a 18
-	// Acrescenta-se 2 em cada combustível para não ter nenhum avião com combustível igual a 0
-	qtdCombustivel = rand()%19;
-	qtdCombustivel = qtdCombustivel + 2;
+	if(nPrateleira == 5)
+		*nAvioes = rand()%2;
+	else
+		*nAvioes = rand()%4;
+
+	/* A quantidade de combustivel recebe um número de 0 a 18
+	   Acrescenta-se 2 em cada combustível para não ter nenhum avião com combustível igual a 0 */
+	
+
+	qtdCombustivel = rand()%19 + 2;
 
 	int aux = *nAvioes;
 
@@ -34,14 +43,11 @@ void insereFila(noAviao **pont, int id, int qtdCombustivel, int *nAvioes, int nP
 		// Não deixa o avião receber o mesmo id e a mesma quantidade de combustível
 		if(aux == 1){
 			id=id+2;
-			qtdCombustivel = rand()%19;
-			qtdCombustivel = qtdCombustivel + 2;
+			qtdCombustivel = rand()%19 + 2;
 		}
 		if(aux == 2){
 			id=id+2;
-			qtdCombustivel = 0;
-			qtdCombustivel = rand()%19;
-			qtdCombustivel = qtdCombustivel + 2;
+			qtdCombustivel = rand()%19 + 2;
 		}
 
 		// Insere o avião na fila de pouso
@@ -64,24 +70,28 @@ void insereFila(noAviao **pont, int id, int qtdCombustivel, int *nAvioes, int nP
 		aux = aux - 1;
 	}
 
-	noAviao *aux2 = *pont;
-
-	// Remove uma quantidade de combustível para cada inserção
-	// E prioriza quem tem o combustível igual a 2
-	do{
-		aux2->qtdCombustivel = aux2->qtdCombustivel - 1;
-		if(aux2->prox->qtdCombustivel == 2){
-			removePrioridade(aux2,file);
-		}
-		aux2 = aux2->prox;
-	}while(aux2 != (*pont));
-
 	fprintf(*file,"Prateleira %d:\n",nPrateleira);
-	printaFila(*pont,file);
+	printaFila(*pont,file,nPrateleira);
+
+	/* Remove uma quantidade de combustível para cada inserção
+	   E prioriza quem tem o combustível igual a 2 */
+	if(nPrateleira != 5){
+		noAviao *aux2 = *pont;
+		do{
+			aux2->qtdCombustivel = aux2->qtdCombustivel - 1;
+			if(aux2->prox->qtdCombustivel <= 2){
+				removePrioridade(pont,&aux2,file);
+				*prioridade = *prioridade + 1;
+				return;
+			}else 
+				aux2 = aux2->prox;
+		}while(aux2 != (*pont));
+	}
 }
 
-void removeFila(noAviao **pont, int nPrateleira, FILE **file){
+void removeFila(noAviao **pont, int nPrateleira, FILE **file, int *prioridade){
 	assert(pont);
+	assert(file);
 
 	if(*pont == NULL) return;
 	
@@ -89,14 +99,16 @@ void removeFila(noAviao **pont, int nPrateleira, FILE **file){
 	noAviao *pontPrim = (*pont)->prox;
 	noAviao *pontPenult = (*pont)->prox;
 
-	// Remove uma quantidade de combustível para cada inserção
-	// E prioriza quem tem o combustível igual a 2
+	/* Remove uma quantidade de combustível para cada inserção
+	   E prioriza quem tem o combustível igual a 2 */
 	do{
 		aux->qtdCombustivel = aux->qtdCombustivel - 1;
-		if(aux->prox->qtdCombustivel == 2){
-			removePrioridade(aux, file);
-		}
-		aux = aux->prox;
+		if(aux->prox->qtdCombustivel <= 2){
+			removePrioridade(pont, &aux, file);
+			*prioridade = *prioridade + 1;
+			return;
+		}else
+			aux = aux->prox;
 	}while(aux != (*pont));
 
 
@@ -106,31 +118,86 @@ void removeFila(noAviao **pont, int nPrateleira, FILE **file){
 			pontPenult = pontPenult->prox;
 		}
 		free(*pont);
-		fprintf(*file,"Avião ID:%d da prateleira %d pousou com sucesso!\n\n",((*pont)->id), nPrateleira);
+		if(nPrateleira != 0)
+			fprintf(*file,"Avião ID:%d da prateleira %d pousou!\n\n",((*pont)->id), nPrateleira);
 		*pont = pontPenult;
-		pontPenult->prox = pontPrim;
+		pontPenult->prox = *pont;
 	}else{
 		free(*pont);
-		fprintf(*file,"Avião ID:%d da prateleira %d pousou com sucesso!\n\n",((*pont)->id), nPrateleira);
+		if(nPrateleira != 0)
+			fprintf(*file,"Avião ID:%d da prateleira %d pousou!\n\n",((*pont)->id), nPrateleira);
 		*pont = NULL;
 	}
 }
 
-void printaFila(noAviao *pont, FILE **file){
+void decolaAviao(noAviao **pont, FILE **file){
+	assert(pont);
+	assert(file);
+
+	if(*pont == NULL) return;
+
+	noAviao *pontPrim = (*pont)->prox;
+	noAviao *pontPenult = (*pont)->prox;
+
+	if(pontPrim->prox != pontPrim){
+		while(pontPenult->prox != *pont){
+			pontPenult = pontPenult->prox;
+		}
+		free(*pont);
+		fprintf(*file,"Avião ID:%d decolou!\n\n",((*pont)->id));
+		*pont = pontPenult;
+		pontPenult->prox = pontPrim;
+	}else{
+		free(*pont);
+		fprintf(*file,"Avião ID:%d decolou!\n\n",((*pont)->id));
+		*pont = NULL;
+	}
+}
+
+void printaFila(noAviao *pont, FILE **file, int nPrateleira){
+	assert(file);
+	
 	if(pont == NULL){
-		fprintf(*file,"Não há aviões na fila de pouso!\n");
-		
+		if(nPrateleira == 5)
+			fprintf(*file,"Na prateleira %d todos os aviões decolaram!\n",nPrateleira);
+		else
+			fprintf(*file,"Na prateleira %d todos os aviões pousaram!\n",nPrateleira);
 	}else{
 		noAviao *aux = pont;
 		while(aux->prox != pont){
 			aux = aux->prox;
-			fprintf(*file,"ID: %d\tCombustível restante: %d\n", aux->id, aux->qtdCombustivel);
+			fprintf(*file,"ID: %d\tCombustível: %d\n", aux->id, aux->qtdCombustivel);
 		}
-		fprintf(*file,"ID: %d\tCombustível restante: %d\n", pont->id, pont->qtdCombustivel);
+		fprintf(*file,"ID: %d\tCombustível: %d\n", pont->id, pont->qtdCombustivel);
 	}
 	fprintf(*file,"\n");
 }
 
-void removePrioridade(noAviao *pont, FILE **file){
+void removePrioridade(noAviao **pontPrim, noAviao **pont, FILE **file){
+	assert(file);
+	assert(pont);
+
+	if(*pont == NULL) return;
+
+	// Se o a avião for o único na fila
+	if((*pont) == (*pont)->prox){
+		free(*pont);
+		*pont = NULL;
+		*pontPrim = NULL;
+		return;
+	}
+
+	// Se o avião for o primeiro da fila
+	if(*pontPrim == (*pont)->prox){
+		free(*pontPrim);
+		*pontPrim = *pont;
+		(*pont)->prox = *pont;
+		return;
+	}
 	
+	// Caso genérico
+	free((*pont)->prox);
+	(*pont)->prox = *pontPrim;
+
+	fprintf(*file,"Um avião com prioridade nessa prateleira acabou de pousar\n\n");
 }
