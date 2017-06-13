@@ -13,16 +13,13 @@ void insereFila(noAviao **pont, int id, int qtdCombustivel, int *nAvioes, int nP
 	 * O número de aviões para decolar recebe um número de 0 a 1
 	 * Chega no máximo 1 avião na fila de pouso por vez
 	 */
-
 	if(nPrateleira == 5)
 		*nAvioes = rand()%2;
 	else
 		*nAvioes = rand()%4;
 
-	/* A quantidade de combustivel recebe um número de 0 a 18
+	/* A quantidade de combustível recebe um número de 0 a 18
 	   Acrescenta-se 2 em cada combustível para não ter nenhum avião com combustível igual a 0 */
-	
-
 	qtdCombustivel = rand()%19 + 2;
 
 	int aux = *nAvioes;
@@ -50,7 +47,7 @@ void insereFila(noAviao **pont, int id, int qtdCombustivel, int *nAvioes, int nP
 			qtdCombustivel = rand()%19 + 2;
 		}
 
-		// Insere o avião na fila de pouso
+		// Insere o avião na fila de pouso ou decolagem
 		if(*pont == NULL){
 			*pont = (noAviao *) malloc(sizeof(noAviao));
 			if(*pont != NULL){
@@ -139,6 +136,7 @@ void decolaAviao(noAviao **pont, FILE **file){
 	noAviao *pontPrim = (*pont)->prox;
 	noAviao *pontPenult = (*pont)->prox;
 
+	// Remove o avião da fila (decola o avião)
 	if(pontPrim->prox != pontPrim){
 		while(pontPenult->prox != *pont){
 			pontPenult = pontPenult->prox;

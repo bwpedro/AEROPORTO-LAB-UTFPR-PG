@@ -24,18 +24,18 @@ int main(){
 	int p4nAvioes = 0;
 	int p5nAvioes = 0;
 
-	// Inicializa o id e o combustível de cada avião
+	// Inicializa o id, o combustível de cada avião e o numero de prioridades
 	int idp = 0; // Id par usado para pousco
 	int idi = 1; // Id ímpar usado para decolagem
 	int qtdCombustivel = 0;
 	int prioridade = 0;
 
-	// A Unidade de tempo é determinada aleatóriamente entre 1 e 100
+	// A Unidade de tempo é determinada aleatoriamente entre 1 e 100
 	int undTempo = rand()%99 + 1;
 
 	fprintf(file,"########### AEROPORTO ###########\n\n");
 
-	fprintf(file,"O programa por rodou %d unidades de tempo\n\n",undTempo);
+	fprintf(file,"O programa rodou por %d unidades de tempo\n\n",undTempo);
 
 	// Roda o programa seguindo a unidade de tempo dada pela função rand
 	while(undTempo > 0){
